@@ -35,6 +35,7 @@ public class Order implements Serializable {
 
     @JsonProperty("user")
     @ManyToOne
+    @JoinColumn(name = "user_id")
     private User user;
 
     @PrePersist

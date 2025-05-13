@@ -1,6 +1,6 @@
 package br.com.kitchenbackend.controller;
 
-import br.com.kitchenbackend.model.ModelNotification;
+import br.com.kitchenbackend.dto.ProductDTO;
 import br.com.kitchenbackend.model.Product;
 import br.com.kitchenbackend.producer.KafkaProducer;
 import br.com.kitchenbackend.service.ProductService;
@@ -17,11 +17,11 @@ import java.util.Map;
 @RequestMapping("/products/v1")
 public class ProductController {
 
-    private final KafkaProducer<ModelNotification> productProducer;
+    private final KafkaProducer<ProductDTO> productProducer;
     private final ProductService service;
 
     @Autowired
-    public ProductController(@Qualifier("productKafkaProducer") KafkaProducer<ModelNotification> productProducer,
+    public ProductController(@Qualifier("productKafkaProducer") KafkaProducer<ProductDTO> productProducer,
                              ProductService service) {
         this.productProducer = productProducer;
         this.service = service;
@@ -46,7 +46,7 @@ public class ProductController {
     public ResponseEntity<?> createProduct(@RequestBody Product product) {
         try{
             Product productSaved = service.save(product);
-            productProducer.sendNotification(new ModelNotification(productSaved.getId()));
+            productProducer.sendNotification(new ProductDTO(productSaved.getId()));
 
             return ResponseEntity
                     .status(HttpStatus.CREATED)

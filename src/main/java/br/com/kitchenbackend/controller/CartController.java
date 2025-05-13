@@ -1,7 +1,7 @@
 package br.com.kitchenbackend.controller;
 
 import br.com.kitchenbackend.model.Cart;
-import br.com.kitchenbackend.model.ModelNotification;
+import br.com.kitchenbackend.dto.OrderDTO;
 import br.com.kitchenbackend.model.Order;
 import br.com.kitchenbackend.producer.KafkaProducer;
 import br.com.kitchenbackend.service.CartService;
@@ -19,12 +19,12 @@ import java.util.Optional;
 @RequestMapping("/carts/v1")
 public class CartController {
 
-    private final KafkaProducer<ModelNotification> orderProducer;
+    private final KafkaProducer<OrderDTO> orderProducer;
     private final CartService cartService;
     private final OrderService orderService;
 
     @Autowired
-    public CartController(@Qualifier("orderKafkaProducer") KafkaProducer<ModelNotification> orderProducer,
+    public CartController(@Qualifier("orderKafkaProducer") KafkaProducer<OrderDTO> orderProducer,
                           CartService cartService,
                           OrderService orderService) {
         this.orderProducer = orderProducer;
@@ -37,7 +37,7 @@ public class CartController {
         try {
             Cart savedCart = cartService.save(cart);
             Order newOrder = orderService.createOrderFromCart(savedCart.getId(), savedCart.getUser().getId());
-            orderProducer.sendNotification(new ModelNotification(newOrder.getId()));
+            orderProducer.sendNotification(new OrderDTO(newOrder.getId(), newOrder.getStatus()));
 
             return ResponseEntity
                     .status(HttpStatus.CREATED)

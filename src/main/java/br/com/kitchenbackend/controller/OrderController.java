@@ -36,7 +36,12 @@ public class OrderController {
         String token = jwtTokenProvider.getTokenFromRequest(request);
         if (token != null) {
             Long userId = jwtTokenProvider.getUserIdFromToken(token);
-            Optional<Order> order = service.findOrderByIdAndUserId(id,userId);
+            Optional<Order> order;
+            if(userId == 1){
+                order = Optional.ofNullable(service.findById(id));
+            }else {
+                order = service.findOrderByIdAndUserId(id, userId);
+            }
             return order.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
                     .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
         } else {
@@ -50,7 +55,13 @@ public class OrderController {
             return ResponseEntity.badRequest().build();
         }
 
-        Optional<List<Order>> orders = service.findOrdersByUserId(userId);
+        Optional<List<Order>> orders;
+        if(userId == 1){
+            orders = Optional.ofNullable(service.findAll());
+        }else {
+            orders = service.findOrdersByUserId(userId);
+        }
+
         return orders.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
 
     }
