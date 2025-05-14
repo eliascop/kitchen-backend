@@ -25,6 +25,7 @@ public class UserService extends GenericService<User, Long> {
         }
         String hashedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashedPassword);
+        user.setProfile(2);
         return userRepository.save(user);
     }
 }

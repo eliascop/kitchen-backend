@@ -52,5 +52,5 @@ INSERT INTO products (name, description, type, price) VALUES
 ('Salada Mista', 'Salada com folhas verdes, tomate, pepino e cenoura.', 'accompaniment', 14.00);
 
 -- Inserir usuario admin
-INSERT INTO users (name, email, phone,user, password) VALUES
-('Administrator', 'admin@admin.com', '11-2444-2244', 'admin', '$2a$10$O4peZtrhK6DmTTgW6BVIwOgtWmfR8XDCxyPZbk7osS97NDiTU3a06')
+INSERT INTO users (name, email, phone, profile, user, password) VALUES
+('Administrator', 'admin@admin.com', '11-2444-2244', 1, 'admin', '$2a$10$O4peZtrhK6DmTTgW6BVIwOgtWmfR8XDCxyPZbk7osS97NDiTU3a06')

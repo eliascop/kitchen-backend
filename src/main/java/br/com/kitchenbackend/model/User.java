@@ -41,6 +41,7 @@ public class User implements Serializable {
     @Email(message = "Formato de e-mail inválido")
     private String email;
 
+    @JsonProperty("profile")
     private int profile;
 
 }
