@@ -15,4 +15,8 @@ public class OrderDTO {
     public OrderDTO(Long id){
         this.id = id;
     }
+    @Override
+    public String toString() {
+        return "OrderDTO{id=" + id + ", status='" + status + "'}";
+    }
 }

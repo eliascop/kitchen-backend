@@ -17,7 +17,6 @@ public class KafkaProducer<T> {
     }
 
     public void sendNotification(T data) {
-        logger.info(String.format("Notificação '%s' para o tópico '%s'", data, topic));
         kafkaTemplate.send(topic, data);
     }
 }

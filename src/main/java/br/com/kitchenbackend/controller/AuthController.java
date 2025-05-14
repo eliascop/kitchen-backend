@@ -1,13 +1,12 @@
 package br.com.kitchenbackend.controller;
 
+import br.com.kitchenbackend.dto.AuthRequestDTO;
+import br.com.kitchenbackend.dto.AuthResponseDTO;
 import br.com.kitchenbackend.model.User;
 import br.com.kitchenbackend.security.CustomUserDetails;
 import br.com.kitchenbackend.service.UserService;
 import br.com.kitchenbackend.util.JwtTokenProvider;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +31,7 @@ public class AuthController {
     private UserService userService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody AuthRequestLogin authRequest) {
+    public ResponseEntity<?> login(@Valid @RequestBody AuthRequestDTO authRequest) {
         try {
             var authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authRequest.getUser(), authRequest.getPassword())
@@ -43,7 +42,7 @@ public class AuthController {
 
             final String jwt = jwtTokenProvider.generateToken(user);
 
-            return ResponseEntity.ok(new AuthResponse(jwt));
+            return ResponseEntity.ok(new AuthResponseDTO(jwt));
 
         } catch (Exception ex) {
             return ResponseEntity
@@ -62,18 +61,4 @@ public class AuthController {
         }
     }
 
-}
-
-@Data
-class AuthRequestLogin {
-    @NotBlank(message = "O usuário não pode estar em branco")
-    private String user;
-    @NotBlank(message = "A senha não pode estar em branco")
-    private String password;
-}
-
-@Data
-@AllArgsConstructor
-class AuthResponse {
-    private String jwt;
 }
