@@ -2,7 +2,9 @@ package br.com.kitchenbackend.model;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -43,5 +45,12 @@ public class User implements Serializable {
 
     @JsonProperty("profile")
     private int profile;
+
+    private String paypalPayerId;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Order> orders;
+
 
 }

@@ -9,10 +9,10 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 		basePackages = "br.com.kitchenbackend.repository",
 		repositoryBaseClass = br.com.kitchenbackend.repository.impl.GenericRepositoryImpl.class
 )
-public class ApiJpaApplication {
+public class KitchenApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ApiJpaApplication.class, args);
+		SpringApplication.run(KitchenApplication.class, args);
 	}
 
 }

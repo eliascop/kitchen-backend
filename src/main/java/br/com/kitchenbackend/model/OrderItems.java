@@ -10,11 +10,11 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "cartItems", schema = "master")
+@Table(name = "orderItems", schema = "master")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CartItems implements Serializable {
+public class OrderItems implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 2L;
@@ -25,9 +25,9 @@ public class CartItems implements Serializable {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "cart_id")
+    @JoinColumn(name = "order_id")
     @JsonBackReference
-    private Cart cart;
+    private Order order;
 
     @ManyToOne
     @JoinColumn(name = "product_id")

@@ -19,6 +19,10 @@ public class UserService extends GenericService<User, Long> {
         this.userRepository = repository;
     }
 
+    public void deleteUser(User user){
+        this.userRepository.delete(user);
+    }
+
     public User registerUser(User user) {
         if (userRepository.findByUser(user.getUser()).isPresent()) {
             throw new RuntimeException("Usuário já existe");
