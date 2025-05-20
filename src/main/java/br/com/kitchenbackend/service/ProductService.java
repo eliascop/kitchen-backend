@@ -1,6 +1,7 @@
 package br.com.kitchenbackend.service;
 
 import br.com.kitchenbackend.model.Product;
+import br.com.kitchenbackend.model.User;
 import br.com.kitchenbackend.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 
@@ -16,5 +17,9 @@ public class ProductService extends GenericService<Product, Long> {
 
     public Product save(Product product) {
         return productRepository.save(product);
+    }
+
+    public void deleteProduct(Product product){
+        this.productRepository.delete(product);
     }
 }

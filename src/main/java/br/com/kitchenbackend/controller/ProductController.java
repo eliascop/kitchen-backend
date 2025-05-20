@@ -2,6 +2,7 @@ package br.com.kitchenbackend.controller;
 
 import br.com.kitchenbackend.dto.ProductDTO;
 import br.com.kitchenbackend.model.Product;
+import br.com.kitchenbackend.model.User;
 import br.com.kitchenbackend.producer.KafkaProducer;
 import br.com.kitchenbackend.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,5 +64,28 @@ public class ProductController {
                             "details", e.getMessage()
                     ));
         }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        try{
+            Product product = service.findById(id);
+            service.deleteProduct(product);
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(Map.of(
+                            "message", "Product deleted successfully",
+                            "code", HttpStatus.OK
+                    ));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "errorCode", 500,
+                            "message", "An error occurred when delete product",
+                            "details", e.getMessage()
+                    ));
+        }
+
     }
 }
