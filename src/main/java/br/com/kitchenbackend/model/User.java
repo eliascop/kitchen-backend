@@ -52,5 +52,8 @@ public class User implements Serializable {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Order> orders;
 
+    public User(Long id){
+        this.id = id;
+    }
 
 }

@@ -53,6 +53,15 @@ public class JwtTokenProvider {
         return getAllClaimsFromToken(token).get("id", Long.class);
     }
 
+    public Long getUserIdFromRequest(HttpServletRequest request) {
+        String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7);
+            return getUserIdFromToken(token);
+        }
+        return null;
+    }
+
     private Claims getAllClaimsFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(secretKey)

@@ -82,22 +82,21 @@ public class PaypalController {
     }
 
     @GetMapping("/cancelled")
-    public ResponseEntity<String> cancelled(@RequestParam("token") String token,
-                                            @RequestParam("orderId") Long orderId) {
+    public void cancelled(@RequestParam("token") String token,
+                                            @RequestParam("orderId") Long orderId,
+                                            HttpServletResponse response) {
         try {
+
             Order orderToCancel = orderService.findById(orderId);
-
-            if (orderToCancel == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Pedido não encontrado.");
-            }
-
             orderToCancel.setStatus("CANCELED");
             orderService.save(orderToCancel);
+            response.sendRedirect(urlHome+"/cart?message=cancelled");
 
-            return ResponseEntity.ok("Pagamento cancelado.");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erro ao atualizar status do pedido: " + e.getMessage());
+            try {
+                response.sendRedirect(urlHome + "/cart?message=errortocancel");
+            } catch (Exception ignored) {
+            }
         }
     }
 
