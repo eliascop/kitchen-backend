@@ -10,10 +10,13 @@ import br.com.kitchenbackend.repository.WalletTransactionRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -53,8 +56,8 @@ public class WalletService {
     @Transactional
     public void debit(Long userId, BigDecimal amount, String description) {
         Wallet wallet = getOrCreateWallet(userId);
-        if (wallet.getBalance().compareTo(amount) < 0) {
-            throw new IllegalArgumentException("Saldo insuficiente");
+        if (amount.compareTo(wallet.getBalance()) > 0) {
+            throw new IllegalArgumentException("Insufficient wallet balance");
         }
         wallet.setBalance(wallet.getBalance().subtract(amount));
         walletRepository.save(wallet);
@@ -74,14 +77,13 @@ public class WalletService {
         return walletTransactionRepository.findByWalletIdOrderByCreatedAtDesc(wallet.getId());
     }
 
-    public double getBalanceForUser(Long userId) {
+    public BigDecimal getBalanceForUser(Long userId) {
         List<WalletTransaction> transactions = walletTransactionRepository.findByWallet_User_Id(userId);
 
         return transactions.stream()
-                .mapToDouble(tx -> tx.getType() == TransactionType.CREDIT ?
-                        tx.getAmount().doubleValue() :
-                        tx.getAmount().negate().doubleValue())
-                .sum();
+                .map(tx -> tx.getType() == TransactionType.CREDIT ?
+                        tx.getAmount() :
+                        tx.getAmount().negate())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
-
 }

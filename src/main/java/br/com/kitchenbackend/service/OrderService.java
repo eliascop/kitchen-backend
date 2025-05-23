@@ -1,37 +1,52 @@
 package br.com.kitchenbackend.service;
 
+import br.com.kitchenbackend.dto.OrderDTO;
 import br.com.kitchenbackend.model.Order;
 import br.com.kitchenbackend.model.User;
+import br.com.kitchenbackend.producer.KafkaProducer;
 import br.com.kitchenbackend.repository.OrderRepository;
 import br.com.kitchenbackend.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class OrderService extends GenericService<Order, Long> {
 
+    private final KafkaProducer<OrderDTO> orderProducer;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final WalletService walletService;
 
-    public OrderService(OrderRepository repository,
-                        UserRepository userRepository) {
+    public OrderService(@Qualifier("orderKafkaProducer") KafkaProducer<OrderDTO> orderProducer,
+            OrderRepository repository,
+            UserRepository userRepository,
+            WalletService walletService) {
         super(repository, Order.class);
+        this.orderProducer = orderProducer;
         this.orderRepository = repository;
         this.userRepository = userRepository;
+        this.walletService = walletService;
     }
 
     @Transactional
-    public Order save(Order order) {
+    public Order createOrder(Order order) {
         if (order.getUser() != null && order.getUser().getId() != null) {
             User user = userRepository.findById(order.getUser().getId())
-                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                    .orElseThrow(() -> new RuntimeException("User not found"));
             order.setUser(user);
+        }else{
+            throw new IllegalArgumentException("User must be set for the order");
         }
 
-        return orderRepository.save(order);
+        walletService.debit(order.getUser().getId(), order.getTotal(), "COMPRA");
+        Order orderSaved = orderRepository.save(order);
+        orderProducer.sendNotification(new OrderDTO(orderSaved.getId()));
+        return orderSaved;
     }
 
     public Optional<List<Order>> findOrdersByUserId(Long userId) {

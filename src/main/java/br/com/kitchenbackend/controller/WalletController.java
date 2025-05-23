@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -49,14 +50,14 @@ public class WalletController {
     }
 
     @GetMapping("/balance")
-    public ResponseEntity<Double> getBalance(HttpServletRequest request) {
+    public ResponseEntity<BigDecimal> getBalance(HttpServletRequest request) {
         String token = jwtTokenProvider.getTokenFromRequest(request);
         if (token == null || !jwtTokenProvider.validateToken(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
-        double balance = walletService.getBalanceForUser(userId);
+        BigDecimal balance = walletService.getBalanceForUser(userId);
         return ResponseEntity.ok(balance);
     }
 }

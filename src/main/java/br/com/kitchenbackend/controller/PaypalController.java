@@ -39,7 +39,7 @@ public class PaypalController {
     @PostMapping("/payment")
     public ResponseEntity<?> pay(@RequestBody Order order) {
         try {
-            Order savedOrder = orderService.save(order);
+            Order savedOrder = orderService.createOrder(order);
             String approvalLink = paypalService.doPayment(savedOrder);
 
             return ResponseEntity
@@ -72,7 +72,7 @@ public class PaypalController {
                 orderPaid.setStatus("CANCELED");
                 redirect+="/cancelled/" +orderId;
             }
-            orderService.save(orderPaid);
+            orderService.createOrder(orderPaid);
             response.sendRedirect(redirect);
         } catch (Exception e) {
             try {
@@ -89,7 +89,7 @@ public class PaypalController {
 
             Order orderToCancel = orderService.findById(orderId);
             orderToCancel.setStatus("CANCELED");
-            orderService.save(orderToCancel);
+            orderService.createOrder(orderToCancel);
             response.sendRedirect(urlHome+"/cart?message=cancelled");
 
         } catch (Exception e) {

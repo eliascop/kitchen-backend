@@ -60,14 +60,14 @@ public class ProductController {
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
                             "errorCode", 500,
-                            "message", "An error occurred when saving order",
+                            "message", "An error occurred when saving product",
                             "details", e.getMessage()
                     ));
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
         try{
             Product product = service.findById(id);
             service.deleteProduct(product);

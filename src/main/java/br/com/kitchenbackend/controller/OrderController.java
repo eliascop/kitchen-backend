@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -17,17 +18,18 @@ import java.util.Optional;
 public class OrderController {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final OrderService service;
+    private final OrderService orderService;
 
     @Autowired
-    public OrderController(OrderService service, JwtTokenProvider jwtTokenProvider) {
-        this.service = service;
+    public OrderController(OrderService orderService,
+                            JwtTokenProvider jwtTokenProvider) {
+        this.orderService = orderService;
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @GetMapping
     public ResponseEntity<List<Order>> showAll() {
-        List<Order> orders = service.findAll();
+        List<Order> orders = orderService.findAll();
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 
@@ -38,9 +40,9 @@ public class OrderController {
             Long userId = jwtTokenProvider.getUserIdFromToken(token);
             Optional<Order> order;
             if(userId == 1){
-                order = Optional.ofNullable(service.findById(id));
+                order = Optional.ofNullable(orderService.findById(id));
             }else {
-                order = service.findOrderByIdAndUserId(id, userId);
+                order = orderService.findOrderByIdAndUserId(id, userId);
             }
             return order.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
                     .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
@@ -57,13 +59,39 @@ public class OrderController {
 
         Optional<List<Order>> orders;
         if(userId == 1){
-            orders = Optional.ofNullable(service.findAll());
+            orders = Optional.ofNullable(orderService.findAll());
         }else {
-            orders = service.findOrdersByUserId(userId);
+            orders = orderService.findOrdersByUserId(userId);
         }
 
         return orders.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
 
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<?> newOrder(@RequestBody Order order, HttpServletRequest request) {
+        try{
+            String token = jwtTokenProvider.getTokenFromRequest(request);
+            if (token == null || !jwtTokenProvider.validateToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            Order orderSaved = orderService.createOrder(order);
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(Map.of(
+                            "code", 200,
+                            "message", "Order successfully created",
+                            "orderId", orderSaved.getId()
+                    ));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "code", 402,
+                            "message", "An error occurred while creating order",
+                            "details", e.getMessage()
+                    ));
+        }
     }
 
 }
