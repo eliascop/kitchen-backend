@@ -1,9 +1,9 @@
 package br.com.kitchenbackend.service;
 
+import br.com.kitchenbackend.builder.PaypalOrderBuilder;
 import br.com.kitchenbackend.dto.PaypalItemDTO;
 import br.com.kitchenbackend.dto.PaypalOrderDTO;
-import br.com.kitchenbackend.model.Order;
-import br.com.kitchenbackend.model.Product;
+import br.com.kitchenbackend.model.WalletTransaction;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -17,6 +17,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class PaypalService {
@@ -30,131 +31,92 @@ public class PaypalService {
     @Value("${paypal.base.url}")
     private String baseUrl;
 
-    @Value("${frontend.base.url}")
-    private String homeUrl;
-
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public String doPayment(Order order) throws Exception {
+    public String doPayment(WalletTransaction walletTx) {
+        String accessToken = obtainAccessToken();
+
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        headers.setBasicAuth(clientId, clientSecret);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(accessToken);
 
-        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("grant_type", "client_credentials");
+        String orderJson = PaypalOrderBuilder.buildOrderJson(walletTx);
 
-        HttpEntity<MultiValueMap<String, String>> tokenRequest = new HttpEntity<>(body, headers);
+        HttpEntity<String> request = new HttpEntity<>(orderJson, headers);
 
-        ResponseEntity<JsonNode> tokenResponse = restTemplate.exchange(
-                baseUrl + "/v1/oauth2/token",
-                HttpMethod.POST,
-                tokenRequest,
-                JsonNode.class
-        );
-
-        String accessToken = tokenResponse.getBody().get("access_token").asText();
-
-        HttpHeaders orderHeaders = new HttpHeaders();
-        orderHeaders.setContentType(MediaType.APPLICATION_JSON);
-        orderHeaders.setBearerAuth(accessToken);
-
-        String orderJson = generatePaypalOrderJson(order);
-
-        HttpEntity<String> orderRequest = new HttpEntity<>(orderJson, orderHeaders);
-
-        ResponseEntity<JsonNode> orderResponse = restTemplate.exchange(
+        ResponseEntity<JsonNode> response = restTemplate.exchange(
                 baseUrl + "/v2/checkout/orders",
                 HttpMethod.POST,
-                orderRequest,
+                request,
                 JsonNode.class
         );
 
-        JsonNode links = orderResponse.getBody().get("links");
-        for (JsonNode link : links) {
+        JsonNode body = response.getBody();
+        if (body == null || !body.has("links")) {
+            throw new IllegalStateException("PayPal order response is invalid.");
+        }
+
+        for (JsonNode link : body.get("links")) {
             if ("approve".equals(link.get("rel").asText())) {
                 return link.get("href").asText();
             }
         }
 
-        throw new IllegalStateException("Não foi possível obter o link de aprovação do PayPal.");
+        throw new IllegalStateException("Approval link not found in PayPal response.");
     }
 
-    public String confirmPayment(String orderId) throws Exception {
+    public String confirmPayment(String orderId) {
+        String accessToken = obtainAccessToken();
+
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        headers.setBasicAuth(clientId, clientSecret);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(accessToken);
 
-        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("grant_type", "client_credentials");
+        HttpEntity<String> captureRequest = new HttpEntity<>(null, headers);
 
-        HttpEntity<MultiValueMap<String, String>> tokenRequest = new HttpEntity<>(body, headers);
-
-        ResponseEntity<JsonNode> tokenResponse = restTemplate.exchange(
-                baseUrl + "/v1/oauth2/token",
-                HttpMethod.POST,
-                tokenRequest,
-                JsonNode.class
-        );
-
-        String accessToken = tokenResponse.getBody().get("access_token").asText();
-
-        HttpHeaders captureHeaders = new HttpHeaders();
-        captureHeaders.setContentType(MediaType.APPLICATION_JSON);
-        captureHeaders.setBearerAuth(accessToken);
-
-        HttpEntity<String> captureRequest = new HttpEntity<>(null, captureHeaders);
-
-        ResponseEntity<JsonNode> captureResponse = restTemplate.exchange(
+        ResponseEntity<JsonNode> response = restTemplate.exchange(
                 baseUrl + "/v2/checkout/orders/" + orderId + "/capture",
                 HttpMethod.POST,
                 captureRequest,
                 JsonNode.class
         );
 
-        return captureResponse.getBody().get("status").asText();
-    }
-
-    private String generatePaypalOrderJson(Order order){
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
-        List<PaypalItemDTO> items = order.getItems().stream().map(item -> {
-            Product product = item.getProduct();
-            return new PaypalItemDTO(
-                    product.getName(),
-                    product.getDescription(),
-                    String.valueOf(item.getQuantity()),
-                    new PaypalItemDTO.UnitAmountDTO("BRL", product.getPrice().setScale(2).toString())
-            );
-        }).toList();
-
-        PaypalOrderDTO paypalOrderDTO = new PaypalOrderDTO();
-        paypalOrderDTO.setIntent("CAPTURE");
-
-        PaypalOrderDTO.Amount amount = new PaypalOrderDTO.Amount();
-        amount.setCurrency_code("BRL");
-        amount.setValue(order.getTotal().setScale(2, RoundingMode.HALF_UP).toString());
-        amount.setBreakdown(new PaypalOrderDTO.Breakdown(
-                new PaypalOrderDTO.ItemTotal("BRL", order.getTotal().setScale(2,RoundingMode.HALF_UP).toString())
-        ));
-
-        paypalOrderDTO.setPurchase_units(List.of(new PaypalOrderDTO.PurchaseUnit(
-                "Pedido da KitchenApp",
-                amount,
-                items
-        )));
-
-        paypalOrderDTO.setApplication_context(new PaypalOrderDTO.ApplicationContext(
-                "http://localhost:8082/paypal/success?orderId=" + order.getId(),
-                "http://localhost:8082/paypal/cancelled?orderId=" + order.getId()
-        ));
-
-        try {
-            return mapper.writeValueAsString(paypalOrderDTO);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+        JsonNode body = response.getBody();
+        if (body == null || !body.has("status")) {
+            throw new IllegalStateException("Invalid capture response from PayPal.");
         }
 
+        return body.get("status").asText();
     }
+
+    private String obtainAccessToken() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        headers.setBasicAuth(clientId, clientSecret);
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("grant_type", "client_credentials");
+
+        HttpEntity<MultiValueMap<String, String>> tokenRequest = new HttpEntity<>(body, headers);
+
+        ResponseEntity<JsonNode> response = restTemplate.exchange(
+                baseUrl + "/v1/oauth2/token",
+                HttpMethod.POST,
+                tokenRequest,
+                JsonNode.class
+        );
+
+        JsonNode responseBody = response.getBody();
+        if (responseBody == null || !responseBody.has("access_token")) {
+            throw new IllegalStateException("Failed to obtain access token from PayPal.");
+        }
+
+        return responseBody.get("access_token").asText();
+    }
+
+    private String scale(java.math.BigDecimal value) {
+        return value.setScale(2, RoundingMode.HALF_UP).toString();
+    }
+
 }

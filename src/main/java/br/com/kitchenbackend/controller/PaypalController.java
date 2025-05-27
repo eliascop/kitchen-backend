@@ -1,103 +1,111 @@
 package br.com.kitchenbackend.controller;
 
-import br.com.kitchenbackend.dto.OrderDTO;
-import br.com.kitchenbackend.model.Order;
-import br.com.kitchenbackend.producer.KafkaProducer;
-import br.com.kitchenbackend.service.OrderService;
+import br.com.kitchenbackend.dto.CreditRequest;
+import br.com.kitchenbackend.model.WalletTransaction;
 import br.com.kitchenbackend.service.PaypalService;
+import br.com.kitchenbackend.service.WalletService;
+import br.com.kitchenbackend.util.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/paypal")
+@RequiredArgsConstructor
 public class PaypalController {
 
+    private final JwtTokenProvider jwtTokenProvider;
     private final PaypalService paypalService;
-    private final KafkaProducer<OrderDTO> orderProducer;
-    private final OrderService orderService;
+    private final WalletService walletService;
 
     @Value("${frontend.base.url}")
     private String urlHome;
 
-    @Autowired
-    public PaypalController(@Qualifier("orderKafkaProducer") KafkaProducer<OrderDTO> orderProducer,
-                            OrderService orderService,
-                            PaypalService paypalService) {
-        this.orderProducer = orderProducer;
-        this.orderService = orderService;
-        this.paypalService = paypalService;
-    }
-
     @PostMapping("/payment")
-    public ResponseEntity<?> pay(@RequestBody Order order) {
+    public ResponseEntity<Map<String, Object>> initiatePayment(@RequestBody CreditRequest creditRequest,
+                                                               HttpServletRequest request) {
+        WalletTransaction savedTransaction = null;
         try {
-            Order savedOrder = orderService.createOrder(order);
-            String approvalLink = paypalService.doPayment(savedOrder);
+            Long userId = jwtTokenProvider.getUserIdFromRequest(request);
+            savedTransaction = walletService.createCreditTransaction(userId, creditRequest.amount(), creditRequest.description());
+            String approvalLink = paypalService.doPayment(savedTransaction);
 
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(Map.of(
-                            "redirect", approvalLink
-                    ));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Ocorreu um erro ao iniciar pagamento: " + e.getMessage());
+            return ResponseEntity.ok(Map.of(
+                    "code", HttpStatus.CREATED.value(),
+                    "message", approvalLink
+            ));
+        } catch (Exception ex) {
+            if (savedTransaction != null) {
+                walletService.cancelTransaction(savedTransaction.getId());
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "code", HttpStatus.BAD_REQUEST.value(),
+                    "message", "Erro ao iniciar pagamento: " + ex.getMessage()
+            ));
         }
     }
 
     @GetMapping("/success")
-    public void success(@RequestParam("token") String token,
-                        @RequestParam("orderId") Long orderId,
-                        HttpServletRequest request,
-                        HttpServletResponse response) {
-        String redirect = urlHome;
+    public void onSuccess(@RequestParam("token") String token,
+                          @RequestParam("walletTxId") Long walletTxId,
+                          HttpServletResponse response) {
         try {
             String status = paypalService.confirmPayment(token);
-            Order orderPaid = orderService.findById(orderId);
-            if ("SUCCESS".equals(status) || "COMPLETED".equals(status)) {
-                orderPaid.setStatus("PENDING");
-                orderPaid.setPaymentId(request.getParameter("paymentId"));
-                orderPaid.getUser().setPaypalPayerId(request.getParameter("PayerID"));
-                orderProducer.sendNotification(new OrderDTO(orderPaid.getId(), orderPaid.getStatus()));
-                redirect+="/tracking/" + orderPaid.getId();
+            if ("SUCCESS".equalsIgnoreCase(status) || "COMPLETED".equalsIgnoreCase(status)) {
+                walletService.validateTransaction(walletTxId);
+                redirect(response, "succeeded");
             } else {
-                orderPaid.setStatus("CANCELED");
-                redirect+="/cancelled/" +orderId;
+                redirect(response, status.toLowerCase());
             }
-            orderService.createOrder(orderPaid);
-            response.sendRedirect(redirect);
         } catch (Exception e) {
-            try {
-                response.sendRedirect(urlHome+"/cancelled");
-            } catch (Exception ignored) {}
+            redirect(response, "error", "errortocancel", e.getMessage());
         }
     }
 
     @GetMapping("/cancelled")
-    public void cancelled(@RequestParam("token") String token,
-                                            @RequestParam("orderId") Long orderId,
-                                            HttpServletResponse response) {
+    public void onCancelled(@RequestParam("token") String token,
+                            @RequestParam("walletTxId") Long walletTxId,
+                            HttpServletResponse response) {
         try {
-
-            Order orderToCancel = orderService.findById(orderId);
-            orderToCancel.setStatus("CANCELED");
-            orderService.createOrder(orderToCancel);
-            response.sendRedirect(urlHome+"/cart?message=cancelled");
-
+            walletService.cancelTransaction(walletTxId);
+            redirect(response, "cancelled");
         } catch (Exception e) {
-            try {
-                response.sendRedirect(urlHome + "/cart?message=errortocancel");
-            } catch (Exception ignored) {
-            }
+            redirect(response, "errortocancel");
         }
     }
 
+    private void redirect(HttpServletResponse response, String status) {
+        redirect(response, status, null, null);
+    }
+
+    private void redirect(HttpServletResponse response, String status, String message, String errorDetail) {
+        try {
+            StringBuilder url = new StringBuilder(urlHome)
+                    .append("/wallet?paymentStatus=")
+                    .append(encode(status));
+
+            if (message != null) {
+                url.append("&message=").append(encode(message));
+            }
+
+            if (errorDetail != null) {
+                url.append("&errorDetail=").append(encode(errorDetail));
+            }
+
+            response.sendRedirect(url.toString());
+        } catch (Exception ignored) {
+        }
+    }
+
+    private String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
 }

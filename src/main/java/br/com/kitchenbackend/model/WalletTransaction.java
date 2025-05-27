@@ -32,4 +32,7 @@ public class WalletTransaction {
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    @Enumerated(EnumType.STRING)
+    private TransactionStatus status;
 }

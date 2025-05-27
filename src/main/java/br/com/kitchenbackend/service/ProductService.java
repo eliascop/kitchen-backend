@@ -1,7 +1,6 @@
 package br.com.kitchenbackend.service;
 
 import br.com.kitchenbackend.model.Product;
-import br.com.kitchenbackend.model.User;
 import br.com.kitchenbackend.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 

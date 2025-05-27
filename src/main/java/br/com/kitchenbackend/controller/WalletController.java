@@ -29,13 +29,6 @@ public class WalletController {
         return walletService.getOrCreateWallet(userId);
     }
 
-    @PostMapping("/credit")
-    public ResponseEntity<?> credit(@RequestBody CreditRequest creditRequest, HttpServletRequest request) {
-        Long userId = jwtTokenProvider.getUserIdFromRequest(request);
-        walletService.credit(userId, creditRequest.amount(), creditRequest.description());
-        return ResponseEntity.ok().build();
-    }
-
     @PostMapping("/debit")
     public ResponseEntity<?> debit(@RequestBody DebitRequest debitRequest, HttpServletRequest request) {
         Long userId = jwtTokenProvider.getUserIdFromRequest(request);

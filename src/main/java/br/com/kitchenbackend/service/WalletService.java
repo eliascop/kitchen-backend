@@ -1,22 +1,16 @@
 package br.com.kitchenbackend.service;
 
-import br.com.kitchenbackend.model.TransactionType;
-import br.com.kitchenbackend.model.User;
-import br.com.kitchenbackend.model.Wallet;
-import br.com.kitchenbackend.model.WalletTransaction;
+import br.com.kitchenbackend.model.*;
 import br.com.kitchenbackend.producer.KafkaProducer;
 import br.com.kitchenbackend.repository.WalletRepository;
 import br.com.kitchenbackend.repository.WalletTransactionRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -38,19 +32,15 @@ public class WalletService {
     }
 
     @Transactional
-    public void credit(Long userId, BigDecimal amount, String description) {
+    public WalletTransaction createCreditTransaction(Long userId, BigDecimal amount, String description) {
         Wallet wallet = getOrCreateWallet(userId);
-        wallet.setBalance(wallet.getBalance().add(amount));
-        walletRepository.save(wallet);
-
         WalletTransaction tx = new WalletTransaction();
         tx.setWallet(wallet);
         tx.setAmount(amount);
         tx.setType(TransactionType.CREDIT);
+        tx.setStatus(TransactionStatus.PENDING);
         tx.setDescription(description);
-        walletTransactionRepository.save(tx);
-
-        walletTxProducer.sendNotification(tx);
+        return walletTransactionRepository.save(tx);
     }
 
     @Transactional
@@ -67,6 +57,7 @@ public class WalletService {
         tx.setAmount(amount);
         tx.setType(TransactionType.DEBIT);
         tx.setDescription(description);
+        tx.setStatus(TransactionStatus.AUTHORIZED);
         walletTransactionRepository.save(tx);
 
         walletTxProducer.sendNotification(tx);
@@ -77,10 +68,33 @@ public class WalletService {
         return walletTransactionRepository.findByWalletIdOrderByCreatedAtDesc(wallet.getId());
     }
 
+    @Transactional
+    public void validateTransaction(Long id) {
+        WalletTransaction tx = walletTransactionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Transaction not found with id: " + id));
+        Wallet wallet = tx.getWallet();
+        wallet.setBalance(wallet.getBalance().add(tx.getAmount()));
+        walletRepository.save(wallet);
+
+        tx.setStatus(TransactionStatus.AUTHORIZED);
+        walletTransactionRepository.save(tx);
+        walletTxProducer.sendNotification(tx);
+    }
+
+    @Transactional
+    public void cancelTransaction(Long id) {
+        WalletTransaction tx = walletTransactionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Transaction not found with id: " + id));
+        tx.setStatus(TransactionStatus.CANCELED);
+        walletTransactionRepository.save(tx);
+        walletTxProducer.sendNotification(tx);
+    }
+
     public BigDecimal getBalanceForUser(Long userId) {
         List<WalletTransaction> transactions = walletTransactionRepository.findByWallet_User_Id(userId);
 
         return transactions.stream()
+                .filter(tx -> tx.getStatus().equals(TransactionStatus.AUTHORIZED))
                 .map(tx -> tx.getType() == TransactionType.CREDIT ?
                         tx.getAmount() :
                         tx.getAmount().negate())

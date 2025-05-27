@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,7 +41,7 @@ public class OrderService extends GenericService<Order, Long> {
         }else{
             throw new IllegalArgumentException("User must be set for the order");
         }
-
+        order.setStatus("PENDING");
         walletService.debit(order.getUser().getId(), order.getTotal(), "COMPRA");
         Order orderSaved = orderRepository.save(order);
         orderProducer.sendNotification(new OrderDTO(orderSaved.getId()));
@@ -50,11 +49,19 @@ public class OrderService extends GenericService<Order, Long> {
     }
 
     public Optional<List<Order>> findOrdersByUserId(Long userId) {
-        return orderRepository.findOrdersByUserId(userId);
+        if(userId == 1){
+            return Optional.of(orderRepository.findAll());
+        }else {
+            return orderRepository.findOrdersByUserId(userId);
+        }
     }
 
     public Optional<Order> findOrderByIdAndUserId(Long id, Long userId) {
-        return orderRepository.findOrderByIdAndUserId(id, userId);
-    }
+        if(userId == 1){
+            return orderRepository.findById(id);
+        }else {
+            return orderRepository.findOrderByIdAndUserId(id, userId);
+        }
+     }
 
 }
