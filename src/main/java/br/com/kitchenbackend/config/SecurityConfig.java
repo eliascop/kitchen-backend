@@ -3,6 +3,7 @@ package br.com.kitchenbackend.config;
 import br.com.kitchenbackend.security.JwtAuthenticationFilter;
 import br.com.kitchenbackend.service.CustomUserDetailsService;
 import br.com.kitchenbackend.util.JwtTokenProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,6 +23,9 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    @Value("${frontend.base.url}")
+    private String frontendBaseUrl;
+
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
 
@@ -40,7 +44,7 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(request -> {
                     var config = new org.springframework.web.cors.CorsConfiguration();
-                    config.setAllowedOrigins(List.of("http://192.168.15.176:4200", "http://localhost:4200"));
+                    config.setAllowedOrigins(List.of(frontendBaseUrl, "http://localhost:4200"));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(List.of("*"));
                     config.setAllowCredentials(true);
