@@ -33,7 +33,6 @@ public class KafkaProducerConfig {
 
     @Bean
     public KafkaProducer<OrderDTO> orderKafkaProducer() {
-
         return new KafkaProducer<>(kafkaOrderTemplate, "new-order");
     }
 
