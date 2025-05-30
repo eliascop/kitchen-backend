@@ -9,7 +9,7 @@
 		<version>3.4.4</version>
 		<relativePath/>
 	</parent>
-	<groupId>br.com.kitchenbackend</groupId>
+	<groupId>br.com.kitchen.backend</groupId>
 	<artifactId>kitchen-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
