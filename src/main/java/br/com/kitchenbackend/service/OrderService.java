@@ -41,10 +41,9 @@ public class OrderService extends GenericService<Order, Long> {
         }else{
             throw new IllegalArgumentException("User must be set for the order");
         }
-        order.setStatus("PENDING");
         walletService.debit(order.getUser().getId(), order.getTotal(), "COMPRA");
         Order orderSaved = orderRepository.save(order);
-        orderProducer.sendNotification(new OrderDTO(orderSaved.getId()));
+        orderProducer.sendNotification(new OrderDTO(orderSaved.getId(), orderSaved.getStatus()));
         return orderSaved;
     }
 

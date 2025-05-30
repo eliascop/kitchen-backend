@@ -51,6 +51,9 @@ public class Order implements Serializable {
         if (creation == null) {
             creation = new Date();
         }
+        if (status == null || status.isEmpty()){
+            status = "PENDING";
+        }
     }
 
     @Column(name = "payment_id")
