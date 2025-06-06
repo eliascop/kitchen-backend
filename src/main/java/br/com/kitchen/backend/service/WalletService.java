@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -63,7 +64,7 @@ public class WalletService {
         walletTxProducer.sendNotification(tx);
     }
 
-    public List<WalletTransaction> getTransactions(Long userId) {
+    public Optional<List<WalletTransaction>> getTransactions(Long userId) {
         Wallet wallet = getOrCreateWallet(userId);
         return walletTransactionRepository.findByWalletIdOrderByCreatedAtDesc(wallet.getId());
     }

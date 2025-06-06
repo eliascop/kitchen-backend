@@ -36,9 +36,9 @@ public class OrderController {
     public ResponseEntity<Order> getOrderById(@PathVariable Long id,
                                               @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = userDetails.getUser().getId();
-        Optional<Order> order = orderService.findOrderByIdAndUserId(id, userId);
-        return order.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        return orderService.findOrderByIdAndUserId(id, userId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/search")
@@ -47,9 +47,9 @@ public class OrderController {
             return ResponseEntity.badRequest().build();
         }
 
-        Optional<List<Order>> orders = orderService.findOrdersByUserId(userId);
-        return orders.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
-
+        return orderService.findOrdersByUserId(userId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.noContent().build());
     }
 
     @PostMapping("/create")

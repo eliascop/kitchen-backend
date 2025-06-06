@@ -1,6 +1,7 @@
 package br.com.kitchen.backend.controller;
 
 import br.com.kitchen.backend.dto.DebitRequest;
+import br.com.kitchen.backend.model.Order;
 import br.com.kitchen.backend.model.Wallet;
 import br.com.kitchen.backend.model.WalletTransaction;
 import br.com.kitchen.backend.service.WalletService;
@@ -36,9 +37,11 @@ public class WalletController {
     }
 
     @GetMapping("/transactions")
-    public List<WalletTransaction> getTransactions(HttpServletRequest request) {
+    public ResponseEntity<List<WalletTransaction>> getTransactions(HttpServletRequest request) {
         Long userId = jwtTokenProvider.getUserIdFromRequest(request);
-        return walletService.getTransactions(userId);
+        return walletService.getTransactions(userId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.noContent().build());
     }
 
     @GetMapping("/balance")
