@@ -9,12 +9,12 @@
 		<version>3.4.4</version>
 		<relativePath/>
 	</parent>
-	<groupId>br.com.kitchen.backend</groupId>
-	<artifactId>kitchen-backend</artifactId>
+	<groupId>br.com.kitchen.api</groupId>
+	<artifactId>kitchen-api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>kitchen-backend</name>
+	<name>kitchen-api</name>
 	<description>Projeto Spring Boot com Kafka integration</description>
 
 	<properties>
