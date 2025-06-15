@@ -28,8 +28,7 @@ public class OrderController {
     @GetMapping("/{id}")
     public ResponseEntity<Order> getOrderById(@PathVariable Long id,
                                               @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Long userId = userDetails.getUser().getId();
-        return orderService.findOrderByIdAndUserId(id, userId)
+        return orderService.findOrderByIdAndUserId(id, userDetails.getUser().getId())
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -46,8 +45,7 @@ public class OrderController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<?> newOrder(@RequestBody Order order,
-                                      @AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<?> newOrder(@RequestBody Order order) {
         try{
             Order orderSaved = orderService.createOrder(order);
             return ResponseEntity

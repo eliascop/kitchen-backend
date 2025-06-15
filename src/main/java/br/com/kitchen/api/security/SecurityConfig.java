@@ -1,6 +1,5 @@
-package br.com.kitchen.api.config;
+package br.com.kitchen.api.security;
 
-import br.com.kitchen.api.security.JwtAuthenticationFilter;
 import br.com.kitchen.api.service.CustomUserDetailsService;
 import br.com.kitchen.api.util.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Value;

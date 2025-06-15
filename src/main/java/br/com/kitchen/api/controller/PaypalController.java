@@ -2,15 +2,15 @@ package br.com.kitchen.api.controller;
 
 import br.com.kitchen.api.dto.CreditRequest;
 import br.com.kitchen.api.model.WalletTransaction;
+import br.com.kitchen.api.security.CustomUserDetails;
 import br.com.kitchen.api.service.PaypalService;
 import br.com.kitchen.api.service.WalletService;
-import br.com.kitchen.api.util.JwtTokenProvider;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URLEncoder;
@@ -22,7 +22,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PaypalController {
 
-    private final JwtTokenProvider jwtTokenProvider;
     private final PaypalService paypalService;
     private final WalletService walletService;
 
@@ -31,11 +30,11 @@ public class PaypalController {
 
     @PostMapping("/payment")
     public ResponseEntity<Map<String, Object>> initiatePayment(@RequestBody CreditRequest creditRequest,
-                                                               HttpServletRequest request) {
+                                                               @AuthenticationPrincipal CustomUserDetails userDetails) {
         WalletTransaction savedTransaction = null;
         try {
-            Long userId = jwtTokenProvider.getUserIdFromRequest(request);
-            savedTransaction = walletService.createCreditTransaction(userId, creditRequest.amount(), creditRequest.description());
+            savedTransaction = walletService.createCreditTransaction(
+                    userDetails.getUser().getId(), creditRequest.amount(), creditRequest.description());
             String approvalLink = paypalService.doPayment(savedTransaction);
 
             return ResponseEntity.ok(Map.of(
