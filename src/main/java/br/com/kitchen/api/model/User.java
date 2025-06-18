@@ -25,9 +25,9 @@ public class User implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @JsonProperty("user")
+    @JsonProperty("login")
     @NotBlank(message = "O usuário não pode estar em branco")
-    private String user;
+    private String login;
 
     @NotBlank(message = "A senha não pode estar em branco")
     private String password;
@@ -54,6 +54,12 @@ public class User implements Serializable {
 
     public User(Long id){
         this.id = id;
+    }
+    public User(Long id, String login, String password, int profile) {
+        this.id = id;
+        this.login = login;
+        this.password = password;
+        this.profile = profile;
     }
 
 }

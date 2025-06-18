@@ -21,7 +21,7 @@ public class UserService extends GenericService<User, Long> {
     }
 
     public User registerUser(User user) {
-        userRepository.findByUser(user.getUser())
+        userRepository.findByLogin(user.getLogin())
                 .ifPresent(u -> { throw new RuntimeException("Usuário já existe"); });
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));

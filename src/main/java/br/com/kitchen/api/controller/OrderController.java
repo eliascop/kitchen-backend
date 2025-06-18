@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/orders/v1")
@@ -38,10 +39,13 @@ public class OrderController {
         if (userId == null || userId == 0) {
             return ResponseEntity.badRequest().build();
         }
+        Optional<List<Order>> ordersList = orderService.findOrdersByUserId(userId);
 
-        return orderService.findOrdersByUserId(userId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.noContent().build());
+        if (ordersList.isEmpty() || ordersList.get().isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(ordersList.get());
     }
 
     @PostMapping("/create")
@@ -51,7 +55,7 @@ public class OrderController {
             return ResponseEntity
                     .status(HttpStatus.CREATED)
                     .body(Map.of(
-                            "code", 200,
+                            "code", HttpStatus.CREATED.value(),
                             "message", "Order successfully created",
                             "orderId", orderSaved.getId()
                     ));

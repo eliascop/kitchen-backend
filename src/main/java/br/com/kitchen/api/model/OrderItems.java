@@ -35,15 +35,15 @@ public class OrderItems implements Serializable {
 
     public int quantity;
 
-    @JsonProperty("value")
+    @JsonProperty("item_value")
     @Column(precision = 10, scale = 2)
-    private BigDecimal value;
+    private BigDecimal itemValue;
 
     public void calculateItemValue() {
         BigDecimal totalValue = BigDecimal.ZERO;
         totalValue = totalValue.add(product.getPrice().multiply(new BigDecimal(quantity)));
 
-        this.value = totalValue;
+        this.itemValue = totalValue;
     }
 
 }

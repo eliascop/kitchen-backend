@@ -27,7 +27,7 @@ public class JwtTokenProvider {
 
     public String generateToken(User user) {
         return Jwts.builder()
-                .setSubject(user.getUser())
+                .setSubject(user.getLogin())
                 .claim("id", user.getId())
                 .claim("profile", user.getProfile())
                 .setIssuedAt(new Date())

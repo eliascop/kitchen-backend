@@ -61,7 +61,7 @@ public class Order implements Serializable {
 
     public void calculateTotal() {
         this.total = items.stream()
-                .map(OrderItems::getValue)
+                .map(OrderItems::getItemValue)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }

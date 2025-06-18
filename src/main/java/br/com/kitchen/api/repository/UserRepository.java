@@ -7,5 +7,5 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends GenericRepository<User, Long> {
-    Optional<User> findByUser(String user);
+    Optional<User> findByLogin(String login);
 }
