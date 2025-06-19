@@ -6,6 +6,7 @@ import br.com.kitchen.api.model.WalletTransaction;
 import br.com.kitchen.api.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -23,7 +24,7 @@ public class KafkaProducerConfig {
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        props.put("spring.json.add.type.headers", false);
+        props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
         props.put("spring.json.trusted.packages", "br.com.kitchen.api.dto");
         return props;
     }
@@ -44,11 +45,13 @@ public class KafkaProducerConfig {
     }
 
     @Bean
+    @Qualifier("orderKafkaProducer")
     public KafkaProducer<OrderDTO> orderKafkaProducer() {
         return createProducer(OrderDTO.class, "new-order");
     }
 
     @Bean
+    @Qualifier("walletKafkaProducer")
     public KafkaProducer<WalletTransaction> walletKafkaProducer() {
         return createProducer(WalletTransaction.class, "new-transaction");
     }

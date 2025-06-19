@@ -21,7 +21,10 @@
 		<java.version>17</java.version>
 		<lombok.version>1.18.38</lombok.version>
 		<jsonwebtoken.version>0.11.5</jsonwebtoken.version>
-		<paypal.version>2.1.7</paypal.version>
+		<paypal.version>1.0.2</paypal.version>
+		<mockito-core.version>5.10.0</mockito-core.version>
+		<junit-jupiter.version>5.10.0</junit-jupiter.version>
+		<mockito-junit-jupiter.version>5.10.0</mockito-junit-jupiter.version>
 		<jakarta.validation.version>3.0.2</jakarta.validation.version>
 		<jakarta.persistence.version>3.1.0</jakarta.persistence.version>
 	</properties>
@@ -98,11 +101,29 @@
 		<dependency>
 			<groupId>com.paypal.sdk</groupId>
 			<artifactId>checkout-sdk</artifactId>
-			<version>1.0.2</version>
+			<version>${paypal.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>${junit-jupiter.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>${mockito-core.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-junit-jupiter</artifactId>
+			<version>${mockito-junit-jupiter.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

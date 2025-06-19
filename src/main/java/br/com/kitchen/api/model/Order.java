@@ -35,7 +35,7 @@ public class Order implements Serializable {
     private String status;
 
     @JsonManagedReference
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<OrderItems> items = new ArrayList<>();
 
     @Column(precision = 10, scale = 2)

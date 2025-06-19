@@ -61,9 +61,9 @@ public class OrderController {
                     ));
         } catch (Exception e) {
             return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .status(HttpStatus.BAD_REQUEST.value())
                     .body(Map.of(
-                            "code", 402,
+                            "code", HttpStatus.BAD_REQUEST.value(),
                             "message", "An error occurred while creating order",
                             "details", e.getMessage()
                     ));
