@@ -7,7 +7,7 @@ import lombok.Data;
 public class AuthRequestDTO {
 
     @NotBlank(message = "O usuário não pode estar em branco")
-    private String user;
+    private String login;
 
     @NotBlank(message = "A senha não pode estar em branco")
     private String password;

@@ -1,10 +1,14 @@
 package br.com.kitchen.api.service;
 
+import br.com.kitchen.api.dto.UserDTO;
 import br.com.kitchen.api.model.User;
 import br.com.kitchen.api.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService extends GenericService<User, Long> {
@@ -31,5 +35,25 @@ public class UserService extends GenericService<User, Long> {
 
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
+    }
+    public List<UserDTO> findAllUsers() {
+        return super.findAll()
+                .stream()
+                .map(UserDTO::new)
+                .toList();
+    }
+
+    public Optional<UserDTO> findUserById(Long id){
+        return super.findById(id)
+                .stream()
+                .map(UserDTO::new)
+                .findAny();
+    }
+
+    public List<UserDTO> findUserByName(String name){
+        return super.findByField("login", name)
+                .stream()
+                .map(UserDTO::new)
+                .toList();
     }
 }

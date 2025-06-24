@@ -37,7 +37,7 @@ public class GenericService<T, ID> {
                     .withMatcher(fieldName, ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase());
 
             Example<T> example = Example.of(entity, matcher);
-            return repository.findAll(example, Sort.by(Sort.Direction.ASC, "name"));
+            return repository.findAll(example, Sort.by(Sort.Direction.ASC, fieldName));
 
         } catch (Exception e) {
             throw new RuntimeException("Erro ao buscar por campo: " + fieldName, e);

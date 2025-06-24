@@ -50,6 +50,10 @@ public class WalletService extends GenericService<Wallet, Long> {
         walletTransactionService.validateTransaction(id);
     }
 
+    public boolean isValidSecureToken(String token) {
+        return !walletTransactionService.findByField("secureToken", token).isEmpty();
+    }
+
     public void cancelTransaction(Long id) {
         walletTransactionService.cancelTransaction(id);
     }

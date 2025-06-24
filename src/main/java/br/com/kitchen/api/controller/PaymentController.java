@@ -1,10 +1,11 @@
 package br.com.kitchen.api.controller;
 
-import br.com.kitchen.api.dto.CreditRequest;
 import br.com.kitchen.api.model.WalletTransaction;
+import br.com.kitchen.api.record.CreditRequest;
 import br.com.kitchen.api.security.CustomUserDetails;
-import br.com.kitchen.api.service.PaypalService;
 import br.com.kitchen.api.service.WalletService;
+import br.com.kitchen.api.service.payment.PaymentService;
+import br.com.kitchen.api.service.payment.PaymentServiceFactory;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,34 +17,38 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/paypal")
+@RequestMapping("/payment")
 @RequiredArgsConstructor
-public class PaypalController {
+public class PaymentController {
 
-    private final PaypalService paypalService;
     private final WalletService walletService;
+    private final PaymentServiceFactory paymentServiceFactory;
 
     @Value("${frontend.base.url}")
     private String urlHome;
 
-    @PostMapping("/payment")
-    public ResponseEntity<Map<String, Object>> initiatePayment(@RequestBody CreditRequest creditRequest,
+    @PostMapping("/{provider}")
+    public ResponseEntity<Map<String, Object>> initiatePayment(@PathVariable String provider,
+                                                               @RequestBody CreditRequest creditRequest,
                                                                @AuthenticationPrincipal CustomUserDetails userDetails) {
-        WalletTransaction savedTransaction = null;
+        WalletTransaction transaction = null;
         try {
-            savedTransaction = walletService.createCreditTransaction(
+            transaction = walletService.createCreditTransaction(
                     userDetails.getUser().getId(), creditRequest.amount(), creditRequest.description());
-            String approvalLink = paypalService.doPayment(savedTransaction);
+
+            PaymentService paymentService = paymentServiceFactory.getService(provider);
+            String approvalLink = paymentService.initiatePayment(transaction);
 
             return ResponseEntity.ok(Map.of(
                     "code", HttpStatus.CREATED.value(),
                     "message", approvalLink
             ));
         } catch (Exception ex) {
-            if (savedTransaction != null) {
-                walletService.cancelTransaction(savedTransaction.getId());
+            if (transaction != null) {
+                walletService.cancelTransaction(transaction.getId());
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                     "code", HttpStatus.BAD_REQUEST.value(),
@@ -52,12 +57,21 @@ public class PaypalController {
         }
     }
 
-    @GetMapping("/success")
-    public void onSuccess(@RequestParam("token") String token,
+    @GetMapping("/{provider}/success")
+    public void onSuccess(@PathVariable String provider,
+                          @RequestParam("token") String token,
                           @RequestParam("walletTxId") Long walletTxId,
+                          @RequestParam("secureToken") String secureToken,
                           HttpServletResponse response) {
         try {
-            String status = paypalService.confirmPayment(token);
+            if(!walletService.isValidSecureToken(secureToken)){
+                redirect(response, "error", "invalid-token", "Token inválido ou expirado.");
+                return;
+            }
+
+            PaymentService paymentService = paymentServiceFactory.getService(provider);
+            String status = paymentService.confirmPayment(token);
+
             if ("SUCCESS".equalsIgnoreCase(status) || "COMPLETED".equalsIgnoreCase(status)) {
                 walletService.validateTransaction(walletTxId);
                 redirect(response, "succeeded");
@@ -69,8 +83,9 @@ public class PaypalController {
         }
     }
 
-    @GetMapping("/cancelled")
-    public void onCancelled(@RequestParam("token") String token,
+    @GetMapping("/{provider}/cancelled")
+    public void onCancelled(@PathVariable String provider,
+                            @RequestParam("token") String token,
                             @RequestParam("walletTxId") Long walletTxId,
                             HttpServletResponse response) {
         try {

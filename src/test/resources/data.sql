@@ -26,7 +26,7 @@ INSERT INTO master.wallets (user_id, balance, updated_at)
 VALUES (1, 100.00, CURRENT_TIMESTAMP());
 
 -- Inserir transações da carteira
-INSERT INTO master.wallet_transactions (wallet_id, type, amount, description, status, created_at)
+INSERT INTO master.wallet_transactions (wallet_id, type, amount, description, status, created_at, secure_token)
 VALUES
-  (1, 'CREDIT', 50.00, 'Depósito inicial', 'SUCCESS', CURRENT_TIMESTAMP()),
-  (1, 'DEBIT', 15.50, 'Pagamento pedido #1', 'SUCCESS', CURRENT_TIMESTAMP());
+  (1, 'CREDIT', 50.00, 'Depósito inicial', 'SUCCESS', CURRENT_TIMESTAMP(),'b2afb7feeecd4905'),
+  (1, 'DEBIT', 15.50, 'Pagamento pedido #1', 'SUCCESS', CURRENT_TIMESTAMP(), 'b2afb7feeecd4905');

@@ -44,8 +44,8 @@ public class PaypalOrderBuilder {
         order.setIntent("CAPTURE");
         order.setPurchase_units(List.of(purchaseUnit));
         order.setApplication_context(new PaypalOrderDTO.ApplicationContext(
-                "http://localhost:8082/paypal/success?walletTxId=" + walletTx.getId(),
-                "http://localhost:8082/paypal/cancelled?walletTxId=" + walletTx.getId()));
+                "http://localhost:8082/payment/paypal/success?walletTxId=" + walletTx.getId()+"&secureToken=" + walletTx.getSecureToken(),
+                "http://localhost:8082/payment/paypal/cancelled?walletTxId=" + walletTx.getId() +"&secureToken=" + walletTx.getSecureToken()));
 
         try {
             return mapper.writeValueAsString(order);

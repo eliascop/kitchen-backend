@@ -1,5 +1,6 @@
 package br.com.kitchen.api.controller;
 
+import br.com.kitchen.api.dto.UserDTO;
 import br.com.kitchen.api.model.User;
 import br.com.kitchen.api.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,22 +23,30 @@ public class UserController {
     }
 
     @GetMapping
-    public List<User> showAll() {
-        return service.findAll();
+    public List<UserDTO> findAll() {
+        return service.findAllUsers();
     }
 
     @GetMapping("/{id}")
-    public Optional<User> getUserById(@PathVariable Long id) {
-        return service.findById(id);
+    public  ResponseEntity<?> findUserById(@PathVariable Long id) {
+        return service.findUserById(id)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "User not found", "code", 404)));
     }
 
     @GetMapping("/search")
-    public List<User> findByName(@RequestParam String name) {
-        return service.findByField("user", name);
+    public List<UserDTO> findByName(@RequestParam String name) {
+        return service.findUserByName(name);
     }
 
     @PostMapping
-    public User createUser(@RequestBody User user) { return service.registerUser(user);}
+    public ResponseEntity<UserDTO> createUser(@RequestBody User user) {
+        User userCreated = service.registerUser(user);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(new UserDTO(userCreated));
+    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {

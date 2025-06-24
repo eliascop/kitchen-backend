@@ -1,8 +1,8 @@
 package br.com.kitchen.api.controller;
 
-import br.com.kitchen.api.dto.DebitRequest;
 import br.com.kitchen.api.model.Wallet;
 import br.com.kitchen.api.model.WalletTransaction;
+import br.com.kitchen.api.record.DebitRequest;
 import br.com.kitchen.api.security.CustomUserDetails;
 import br.com.kitchen.api.service.WalletService;
 import br.com.kitchen.api.util.JwtTokenProvider;

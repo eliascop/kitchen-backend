@@ -31,7 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
 
 
-        if (path.startsWith("/auth/") || path.startsWith("/paypal/")){
+        if (path.startsWith("/auth/")){
             filterChain.doFilter(request, response);
             return;
         }

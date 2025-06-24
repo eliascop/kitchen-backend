@@ -35,4 +35,7 @@ public class WalletTransaction {
 
     @Enumerated(EnumType.STRING)
     private TransactionStatus status;
+
+    @Column(nullable = false, unique = true, length = 32)
+    private String secureToken;
 }

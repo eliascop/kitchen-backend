@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class WalletTransactionService extends GenericService<WalletTransaction, Long> {
@@ -33,6 +34,7 @@ public class WalletTransactionService extends GenericService<WalletTransaction, 
         tx.setType(TransactionType.CREDIT);
         tx.setStatus(TransactionStatus.PENDING);
         tx.setDescription(description);
+        tx.setSecureToken(UUID.randomUUID().toString().replace("-", "").substring(0, 16));
         return walletTransactionRepository.save(tx);
     }
 
@@ -45,7 +47,7 @@ public class WalletTransactionService extends GenericService<WalletTransaction, 
         tx.setType(TransactionType.DEBIT);
         tx.setDescription(description);
         tx.setStatus(TransactionStatus.AUTHORIZED);
-
+        tx.setSecureToken(UUID.randomUUID().toString().replace("-", "").substring(0, 16));
         walletTransactionRepository.save(tx);
         walletTxProducer.sendNotification(tx);
     }

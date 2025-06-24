@@ -34,7 +34,7 @@ public class AuthController {
     public ResponseEntity<?> login(@Valid @RequestBody AuthRequestDTO authRequest) {
         try {
             var authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(authRequest.getUser(), authRequest.getPassword())
+                    new UsernamePasswordAuthenticationToken(authRequest.getLogin(), authRequest.getPassword())
             );
 
             var customUserDetails = (CustomUserDetails) authentication.getPrincipal();

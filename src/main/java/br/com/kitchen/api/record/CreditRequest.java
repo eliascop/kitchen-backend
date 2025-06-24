@@ -1,4 +1,4 @@
-package br.com.kitchen.api.dto;
+package br.com.kitchen.api.record;
 
 import java.math.BigDecimal;
 

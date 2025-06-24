@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS master.wallet_transactions (
   description VARCHAR(255),
   status VARCHAR(50),
   created_at TIMESTAMP,
+  secure_token VARCHAR(32),
   CONSTRAINT fk_wallet_trans_wallet FOREIGN KEY (wallet_id) REFERENCES master.wallets(id)
 );
 
