@@ -63,7 +63,8 @@ class OrderControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockUser = userRepository.findById(1L).orElseThrow();
+        mockUser = userRepository.findByLogin("john_admin")
+                .orElseGet(() -> userRepository.findByLogin("john_doe").orElseThrow());
 
         CustomUserDetails userDetails = new CustomUserDetails(
                 mockUser,

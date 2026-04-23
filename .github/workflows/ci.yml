@@ -1,0 +1,68 @@
+name: CI - Minha Aplicação
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./kitchen-backend
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: master
+        # Expor porta 3307 no runner e mapear para 3306 no container
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd='mysqladmin ping -h 127.0.0.1 --silent'
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      # Cache explícito do repositório Maven para acelerar builds
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Dar permissão ao Maven Wrapper
+        run: chmod +x mvnw
+
+      - name: Wait for MySQL to be ready
+        run: |
+          # Pequeno loop de espera para aumentar confiabilidade em CI
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 --silent; then
+              echo "MySQL está pronto" && break
+            fi
+            echo "Aguardando MySQL... ($i/30)"; sleep 2
+          done
+
+      - name: Rodar build e testes
+        env:
+          MAVEN_OPTS: -Dorg.slf4j.simpleLogger.showDateTime=true
+        run: ./mvnw -B -Dspring.datasource.url=jdbc:mysql://127.0.0.1:3306/master -Dspring.datasource.username=root -Dspring.datasource.password=root clean verify
