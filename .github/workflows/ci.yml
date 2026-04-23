@@ -7,7 +7,8 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  build-and-test:
+  # Job que usa MySQL como service (padrão para GitHub Actions)
+  build-and-test-mysql:
     runs-on: ubuntu-latest
 
     defaults:
@@ -50,7 +51,6 @@ jobs:
 
       - name: Wait for MySQL to be ready
         run: |
-          # Tenta checar usando o hostname do serviço 'mysql' (compatível com act)
           for i in {1..60}; do
             if mysqladmin ping -h mysql --silent; then
               echo "MySQL está pronto" && break
