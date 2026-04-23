@@ -12,7 +12,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./kitchen-backend
+        working-directory: .
 
     services:
       mysql:
@@ -20,14 +20,10 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: master
-        # Expor porta 3307 no runner e mapear para 3306 no container
+        # Expor porta 3306 no runner e mapear para 3306 no container
         ports:
           - 3306:3306
-        options: >-
-          --health-cmd='mysqladmin ping -h 127.0.0.1 --silent'
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
+        # Removido 'options' porque ferramentas locais como 'act' podem interpretar mal strings com aspas
 
     steps:
       - name: Baixar o código
