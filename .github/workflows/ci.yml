@@ -1,4 +1,4 @@
-name: CI - Minha Aplicação
+name: CI - kitchen-backend
 
 on:
   pull_request:
@@ -20,10 +20,6 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: master
-        # Expor porta 3306 no runner e mapear para 3306 no container
-        ports:
-          - 3306:3306
-        # Removido 'options' porque ferramentas locais como 'act' podem interpretar mal strings com aspas
 
     steps:
       - name: Baixar o código
@@ -48,17 +44,21 @@ jobs:
       - name: Dar permissão ao Maven Wrapper
         run: chmod +x mvnw
 
+      - name: Instalar cliente MySQL (necessário para `mysqladmin` no act)
+        run: |
+          apt-get update && apt-get install -y default-mysql-client
+
       - name: Wait for MySQL to be ready
         run: |
-          # Pequeno loop de espera para aumentar confiabilidade em CI
-          for i in {1..30}; do
-            if mysqladmin ping -h 127.0.0.1 -P 3306 --silent; then
+          # Tenta checar usando o hostname do serviço 'mysql' (compatível com act)
+          for i in {1..60}; do
+            if mysqladmin ping -h mysql --silent; then
               echo "MySQL está pronto" && break
             fi
-            echo "Aguardando MySQL... ($i/30)"; sleep 2
+            echo "Aguardando MySQL... ($i/60)"; sleep 2
           done
 
       - name: Rodar build e testes
         env:
           MAVEN_OPTS: -Dorg.slf4j.simpleLogger.showDateTime=true
-        run: ./mvnw -B -Dspring.datasource.url=jdbc:mysql://127.0.0.1:3306/master -Dspring.datasource.username=root -Dspring.datasource.password=root clean verify
+        run: ./mvnw -B -Dspring.datasource.url=jdbc:mysql://mysql:3306/master -Dspring.datasource.username=root -Dspring.datasource.password=root clean verify
